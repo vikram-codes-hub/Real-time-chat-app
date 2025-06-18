@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import assets from '../assets/assets';
+import { Authcontext } from '../Context/Authcontext';
 
 const Login = () => {
     const [formMode, setFormMode] = useState('login');
@@ -8,18 +9,20 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [bio, setBio] = useState('');
     const [isDataSubmitted, setIsDataSubmitted] = useState(false);
+
+    const {Login}=useContext(Authcontext)
   
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (formMode === 'Signup' && !isDataSubmitted){
-            setIsDataSubmitted(true)
-            return
-        }
-           
-           
-        
-    };
+   const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formMode === 'Signup' && !isDataSubmitted){
+        setIsDataSubmitted(true);
+        return;
+    }
+
+    Login(formMode === "Signup" ? 'signup' : 'login', { fullName, email, password, bio });
+};
+
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-900 p-4">

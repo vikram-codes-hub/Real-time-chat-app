@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken'
-import User from '../models/User'
+import User from '../models/User.js'
 
 //MIddelware to protect routes
 
-export const protectROute=async(req,res,next)=>{
+export const isLoggedIn =async(req,res,next)=>{
     try {
       const token=req.headers.token
       const decodedtoken=jwt.verify(token,process.env.JWT_SECRET)
@@ -15,6 +15,7 @@ export const protectROute=async(req,res,next)=>{
       req.user=user
       next()
     } catch (error) {
-      res.status(401).json({ success: false, msg:error.msg });
+    res.status(401).json({ success: false, msg: error.message });
+
     }
 }

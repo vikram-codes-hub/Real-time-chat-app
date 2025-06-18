@@ -1,17 +1,35 @@
-import React, { useState } from "react";
+import React, { useState,useContext} from "react";
 import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { Authcontext } from "../Context/Authcontext";
 
 const Profile = () => {
+    const {authuser,updateprofile}=useContext(Authcontext)
+
   const [selectedImg, setselectedImg] = useState(null);
   const navigate = useNavigate();
-  const [name, setname] = useState("Vikram singh gangwar");
-  const [bio, setbio] = useState("");
+  const [name, setname] = useState(authuser.fullName);
+  const [bio, setbio] = useState(authuser.bio);
 
 
   const handelsubmit=async(e)=>{
     e.preventDefault()
-    navigate('/')
+    if(!selectedImg){
+      await updateprofile({fullname: name,bio})
+      navigate('/')
+      return
+    }
+    const render=new FileReader()
+    render.readAsDataURL(selectedImg)
+    render.onload=async()=>{
+      const base64img=render.result
+      await updateprofile({profilePic: base64img,fullName: name,bio})
+       navigate('/')
+      
+console.log("Received data:", { profilePic, bio, fullName });
+
+    }
+
   }
   return (
     <div className="min-h-screen bg-cover bg-no-repeat flex items-center justify-center">
@@ -69,16 +87,24 @@ const Profile = () => {
           </button>
         </form>
          <div className="bg-gradient-to-b from-violet-900/30 to-purple-900/30 flex items-center justify-center p-8 md:p-10 border-t md:border-t-0 md:border-l border-gray-700/50">
-          <div className="text-center">
-           <img 
-  src={assets.logo_icon} 
-  className="w-56 h-56 md:w-64 md:h-64 object-contain mx-auto mb-6 animate-float" 
-  alt="App Logo" 
-/>
+          {selectedImg ? (
+  <img 
+    src={URL.createObjectURL(selectedImg)} 
+    alt="Selected preview" 
+    className="w-56 h-56 md:w-64 md:h-64 object-cover rounded-full mx-auto mb-6"
+  />
+) : (
+  <div className="text-center">
+    <img 
+      src={assets.logo_icon} 
+      className="w-56 h-56 md:w-64 md:h-64 object-contain mx-auto mb-6 animate-float" 
+      alt="App Logo" 
+    />
+    <h3 className="text-xl font-bold text-white mb-2">ChatApp</h3>
+    <p className="text-gray-300 text-sm max-w-xs">Connect with friends and colleagues in real-time</p>
+  </div>
+)}
 
-            <h3 className="text-xl font-bold text-white mb-2">ChatApp</h3>
-            <p className="text-gray-300 text-sm max-w-xs">Connect with friends and colleagues in real-time</p>
-          </div>
         </div> 
       </div>
     </div>

@@ -1,10 +1,15 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose"
 
-export const connectDb=async()=>{
+export const connectDb = async () => {
     try {
-        mongoose.connection.on('connected',()=>console.log("Database Connected"))
-      await mongoose.connect(`${process.env.MONGODB_URL}/chat-app`)
+        const chatDbUrl = process.env.MONGODB_URL + "chatAppDB"; // 👈 use separate DB
+        await mongoose.connect(chatDbUrl, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log("✅ ChatApp DB connected");
     } catch (error) {
-     console.log(error)
+        console.error("❌ MongoDB connection error:", error);
+        process.exit(1);
     }
-}
+};
