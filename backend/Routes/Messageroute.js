@@ -18,6 +18,6 @@ messageRouter.get('/:id', isLoggedIn, getMessages);
 // Mark a message as seen by message id
 messageRouter.put('/mark/:id', isLoggedIn, markMessageseen);
 
-messageRouter.post('/seen/:id',isLoggedIn,sendmessage)
+messageRouter.post('/send/:id',isLoggedIn,sendmessage)
 
 export default messageRouter;

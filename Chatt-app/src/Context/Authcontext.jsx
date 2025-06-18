@@ -68,21 +68,25 @@ export const Authprovider = ({ children }) => {
     }
   };
 
-  const connectsocket = (userData) => {
-    if (!userData || socket?.connected) return;
+const connectsocket = (userData) => {
+  if (!userData || socket?.connected) return;
 
-    const newSocket = io(backendUrl, {
-      query: {
-        userId: userData._id,
-      },
-    });
-    newSocket.connect();
+  const newSocket = io(backendUrl, {
+    query: { userId: userData._id },
+  });
 
-    setsocket(newSocket);
-    newSocket.on("getOnlineUsers", (userIds) => {
-      setonlineuser(userIds);
-    });
-  };
+  newSocket.on("connect", () => {
+    console.log("✅ Socket connected:", newSocket.id);
+  });
+
+  newSocket.on("getOnlineUsers", (ids) => {
+    console.log("🔵 Received online users:", ids);
+    setonlineuser(ids);
+  });
+
+  setsocket(newSocket);
+};
+
 
  useEffect(() => {
   if (token) {

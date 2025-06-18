@@ -1,58 +1,69 @@
-import express from 'express'
-import "dotenv/config"
-import http from 'http'
-const app=express()
-import cors from "cors"
-import { connectDb } from './lib/db.js'
-import userRouter from './Routes/UserRoute.js'
-import messageRouter from './Routes/Messageroute.js'
-import { Server } from 'socket.io'
+import express from 'express';
+import "dotenv/config";
+import http from 'http';
+import cors from "cors";
+import { connectDb } from './lib/db.js';
+import userRouter from './Routes/UserRoute.js';
+import messageRouter from './Routes/Messageroute.js';
+import { Server } from 'socket.io';
 
-const server=http.createServer(app)
+const app = express();
+const server = http.createServer(app);
 
-//middelware setup
-app.use(express.json({limit:"4mb"}))//upload images limit 4mb
-app.use(cors()) 
+// Middleware
+app.use(express.json({ limit: "4mb" }));
+app.use(cors());
 
-
+// Socket.io setup
 export const io = new Server(server, {
-    cors: { origin: "*" }  // ✅ Correct spelling: cors
+  cors: { origin: "*" }
 });
 
+// Store mapping of userId => socketId
+export const UserSocketMap = {}; // ✅ Fixed name
 
-//STORE ONLINE USERS
+// Socket.io connection handler
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
 
-export const UserScoketMap={}  //{UserId: SocketId}
+  if (!userId) {
+    console.log("No userId provided in handshake");
+    return;
+  }
 
-//Socket.io connection hgandeller
+  console.log("User connected:", userId);
 
-io.on("connection",(socket)=>{
-    const userId=socket.handshake.query.userId
-    console.log("User connected",userId)
-    
-    if(userId) UserScoketMap[userId]=socket.id
+  // Save user to the socket map
+  UserSocketMap[userId] = socket.id;
 
-    //Emit online users to all connected clients
-    io.emit("getOnlineUsers",Object.keys(UserScoketMap))
+  // Emit all online user IDs to all clients
+  io.emit("getOnlineUsers", Object.keys(UserSocketMap));
 
-    socket.on("disconnect",()=>{
-        console.log("User Disconnected", userId)
-        delete UserScoketMap[userId]
-        io.emit("getOnlineUsers",Object.keys(UserScoketMap))
-    })
-})
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", userId);
+    delete UserSocketMap[userId];
+    io.emit("getOnlineUsers", Object.keys(UserSocketMap));
+  });
 
+  // Optional: Message relay support
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    const receiverSocketId = UserSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", {
+        senderId,
+        message,
+      });
+    }
+  });
+});
 
-//Route setup
-app.use("/api/status",(req,res)=>res.send("Server is live"))
-app.use("/api/auth",userRouter)
-app.use("/api/messages",messageRouter)
+// Routes
+app.use("/api/status", (req, res) => res.send("Server is live"));
+app.use("/api/auth", userRouter);
+app.use("/api/messages", messageRouter);
 
-
-
-
-
+// DB connection and server start
 await connectDb();
-const PORT=process.env.PORT || 5000
-
-server.listen(PORT,()=>console.log("Server is running on the port number :"+PORT))
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

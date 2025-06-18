@@ -1,7 +1,8 @@
 import Message from "../models/message.js"
+import User from '../models/User.js'
 import cloudinary from '../lib/CLoudinary.js'
 
-import {io,UserScoketMap} from '../server.js'
+import {io, UserSocketMap} from '../server.js'
 
 
 //Get all users except the  loggedin users
@@ -10,7 +11,7 @@ import {io,UserScoketMap} from '../server.js'
 export const getUsersForSidebar=async(req,res)=>{
     try {
      const userId=req.user._id
-     const filteredUsers=awaitUser.find({_id:{$ne:userId}}).select("-password")
+     const filteredUsers=await User.find({_id:{$ne:userId}}).select("-password")
 
      //count number of unseen messages
      const unseenmessages={}
@@ -25,7 +26,8 @@ export const getUsersForSidebar=async(req,res)=>{
      res.json({success:true,users:filteredUsers,unseenmessages})
     } catch (error) {
       console.log(error)
-       res.json({success:false,messages:error.messages})
+       res.json({ success: false, message: error.message });
+
     }
 }
 
@@ -70,37 +72,38 @@ export const markMessageseen=async(req,res)=>{
 
 //send message to selected user
 
-export const sendmessage=async(req,res)=>{
+export const sendmessage = async (req, res) => {
   try {
-    const {text,image}=req.body
+    const { text, image } = req.body;
 
-    const reciverId=req.params.id;
-    const senderId=req.user._id
+    const reciverId = req.params.id;
+    const senderId = req.user._id;
 
     let imageurl;
+    let message; // ✅ Define message here so it's accessible later
 
-    if(image){
-      const uploadeResp=await cloudinary.uploader.upload(image)
-
-      imageurl=uploadeResp.secure_url;
-
-      const message=await Message.create({
-        senderId,reciverId,text,image:imageurl
-      })
+    if (image) {
+      const uploadeResp = await cloudinary.uploader.upload(image);
+      imageurl = uploadeResp.secure_url;
     }
 
-    //Emit the message in the reciver socket
+    message = await Message.create({
+      senderId,
+      reciverId,
+      text,
+      image: imageurl
+    });
 
-    const reciversocketId=UserScoketMap[reciverId]
-    if(reciversocketId){
-      io.to(reciversocketId).emit("newMessage",message)
+    // Emit the message to the receiver's socket
+    const reciversocketId = UserSocketMap[reciverId];
+    if (reciversocketId) {
+      io.to(reciversocketId).emit("newMessage", message);
     }
 
-    res.json({success:true,message})
+    res.json({ success: true, message });
 
-
-  }  catch (error) {
-      console.log(error)
-       res.json({success:false,messages:error.messages})
-    }
-}
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
